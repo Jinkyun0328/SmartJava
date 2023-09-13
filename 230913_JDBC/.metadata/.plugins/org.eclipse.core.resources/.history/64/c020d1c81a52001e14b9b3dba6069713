@@ -1,0 +1,19 @@
+package Model;
+// Model은 데이터와 관련된 부분을 다루는 곳
+
+public class UserInfoDTO {
+	// Data Transfer Object
+	// 데이터를 전달할 자료형
+	private String id;
+	private String pw;
+	private String nickname;
+	private int score;
+	
+	// 생성자
+	// 생성자는 회원가입할 때만 사용
+	// 회원가입할 때는 id, pw, nickname만 기재하고 초기 점수는 0점
+	public UserInfoDTO(String id, String pw, String nickname){
+		this.id = id;
+		
+	}
+}

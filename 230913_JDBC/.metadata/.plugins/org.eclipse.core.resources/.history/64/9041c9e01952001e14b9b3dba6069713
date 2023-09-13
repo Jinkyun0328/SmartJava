@@ -1,0 +1,6 @@
+package Model;
+// Model은 데이터와 관련된 부분을 다루는 곳
+
+public class UserInfoDTO {
+
+}

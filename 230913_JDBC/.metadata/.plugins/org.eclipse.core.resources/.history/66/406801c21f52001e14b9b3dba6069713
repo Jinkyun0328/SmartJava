@@ -1,0 +1,170 @@
+package Model;
+//Model은 데이터와 관련된 부분을 다루는 곳
+
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.ArrayList;
+
+public class UserInfoDAO {
+	// Data Access Object
+	// 데이터베이스에 접근하는 부분
+
+	Connection conn = null; // 데이터베이스와 연결
+	PreparedStatement pst = null; // 데이터를 포장
+	ResultSet rs = null; // 테이블 형태의 자료형
+	Boolean check = false;
+
+	// 데이터베이스와 연결하는 함수
+	// Main 등의 외부 class에서는 거의 사용하지 않는다.
+	// 회원가입, 회원탈퇴, 로그인 등의 함수가 실행할 때 함수 내부에서 실행된다.
+	public void connect() {
+		try {
+			Class.forName("oracle.jdbc.driver.OracleDriver");
+			String url = "jdbc:oracle:thin:@localhost:1521:xe";
+			String user = "service";
+			String userpw = "12345";
+			conn = DriverManager.getConnection(url, user, userpw);
+		} catch (Exception e) {
+			e.printStackTrace();
+		} finally {
+
+		}
+	}
+
+	// 사용한 객체들 반환(종료)
+	public void close() {
+		try {
+			if (rs != null) {
+				rs.close();
+			}
+			if (pst != null) {
+				pst.close();
+			}
+			if (conn != null) {
+				conn.close();
+			}
+		} catch (SQLException e) {
+			e.printStackTrace();
+		}
+	}
+
+	// 회원가입 기능
+	public boolean Join(UserInfoDTO dto) {
+		try {
+			check = false;
+
+			// jdbc 드라이버 불러오기
+			connect();
+
+			// table에 데이터를 넣는 SQL문
+			String sql = "INSERT INTO USER_INFO VALUES(?,?,?)";
+			pst = conn.prepareStatement(sql);
+			pst.setString(1, dto.getId());
+			pst.setString(2, dto.getPw());
+			pst.setString(3, dto.getNickname());
+
+			// table의 내용을 변화시키므로 update
+			int cnt = pst.executeUpdate();
+
+			if (cnt > 0) { // 추가 성공
+				check = true;
+			}
+		} catch (Exception e) {
+			// pst.executeUpdate()에서 오류 발생 가능성
+			// id는 primary key로 되어 있다. 중복된 아이디면 예외 처리
+			System.out.println("중복된 아이디거나 잘못된 형식입니다.");
+		} finally {
+			close();
+		}
+
+		return check;
+	}
+
+	// 로그인 기능
+	public UserInfoDTO login(UserInfoDTO dto) {
+		// 로그인에 성공하면 자신의 nickname과 현재 저장된 score을 출력하려고 한다.
+		// 따라서 해당하는 데이터를 UserInfoDTO 자료형에 담아서 main으로 반환한다.
+		UserInfoDTO result = null;
+
+		try {
+			// jdbc 드라이버 불러오기
+			connect();
+
+			String sql = "SELECT * FROM USER_INFO WHERE ID = ? AND PW = ?";
+			pst = conn.prepareStatement(sql);
+			pst.setString(1, dto.getId());
+			pst.setString(2, dto.getPw());
+			rs = pst.executeQuery();
+
+			if (rs.next()) {
+				result = new UserInfoDTO(rs.getString("ID"), rs.getString("PW"), rs.getString("NICKNAME"));
+			}
+		} catch (Exception e) {
+			// SQL문이 잘못되었거나 테이블에 해당하는 view가 없으면 예외처리
+			System.out.println("가입되지 않은 ID이거나 잘못된 비밀번호입니다.");
+			e.printStackTrace();
+		} finally {
+			close();
+		}
+
+		// 테이블에 데이터가 없으면 null이 반환되고
+		// 데이터가 있으면 UserInfoDTO 자료형을 반환
+		return result;
+	}
+
+	// 회원탈퇴 기능
+	public boolean Withdraw(UserInfoDTO dto) {
+		// 회원탈퇴는 id와 
+		check = false;
+		
+		try {
+			// jdbc 드라이버 불러오기
+			connect();
+
+			String sql = "DELETE FROM USER_INFO WHERE ID = ? AND PW = ?";
+			pst = conn.prepareStatement(sql);
+			pst.setString(1, dto.getId());
+			pst.setString(2, dto.getPw());
+
+			int cnt = pst.executeUpdate();
+
+			// 성공적으로 튜플을 제거하면 정수값을 가짐
+			if (cnt > 0) {
+				check = true;
+			} 
+		} catch (Exception e) {
+			System.out.println("잘못된 아이디 혹은 비밀번호입니다.");
+		} finally {
+			close();
+		}
+
+		return check;
+	}
+	
+	// 전체 테이블 조회
+	public void printTable() {
+		try {
+			connect();
+			
+			String sql = "SELECT * FROM USER_INFO";
+			pst = conn.prepareStatement(sql);
+			rs = pst.executeQuery();
+			
+			System.out.println("ID \t PW \t NICKNAME");
+			while(rs.next()) {
+				String msg = "";
+				msg += rs.getString("ID") + "\t";
+				msg += rs.getString("PW") + "\t";
+				msg += rs.getString("NICKNAME");
+				System.out.println(msg);
+			}
+		} catch (Exception e) {
+
+		} finally {
+			close();
+		}
+	}
+}
